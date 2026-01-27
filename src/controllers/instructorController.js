@@ -45,7 +45,17 @@ exports.registerInstructor = async (req, res, next) => {
         // 4) HASH PASSWORD
         const hashedPassword = await authUtils.hashPassword(password);
 
-        // 5) ATOMIC TRANSACTION
+        // 5) Generate OTP
+        const otp = authUtils.generateOTP();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        // 6) Handle Image Upload
+        let finalProfileImageUrl = profileImageUrl;
+        if (req.file) {
+            finalProfileImageUrl = req.file.path;
+        }
+
+        // 7) ATOMIC TRANSACTION
         const newInstructor = await prisma.$transaction(async (tx) => {
             // a) Create User
             const user = await tx.user.create({
@@ -54,7 +64,10 @@ exports.registerInstructor = async (req, res, next) => {
                     lastName,
                     email,
                     passwordHash: hashedPassword,
-                    profileImageUrl,
+                    profileImageUrl: finalProfileImageUrl,
+                    otp,
+                    otpExpires,
+                    isEmailVerified: false,
                     userRoles: {
                         create: {
                             roleId: role.id
@@ -77,15 +90,26 @@ exports.registerInstructor = async (req, res, next) => {
             });
         });
 
-        // 6) Generate Token
+        // 7) Send OTP Email
+        const sendEmail = require('../utils/emailService');
+        await sendEmail({
+            email: newInstructor.user.email,
+            subject: 'Email Verification OTP',
+            message: `Your verification code is ${otp}. It will expire in 10 minutes.`,
+        });
+
+        // 8) Generate Token
         const token = authUtils.signToken(newInstructor.userId);
 
-        // Hide password hash
+        // Hide sensitive fields
         newInstructor.user.passwordHash = undefined;
+        newInstructor.user.otp = undefined;
+        newInstructor.user.otpExpires = undefined;
 
         res.status(201).json({
             status: 'success',
             token,
+            message: 'Instructor registered. OTP sent to email.',
             data: { instructor: newInstructor }
         });
     } catch (err) {
@@ -135,16 +159,77 @@ exports.getInstructor = async (req, res, next) => {
 };
 
 /**
- * Update Instructor
+ * Update Instructor (Industrial logic: updates both User and Instructor tables)
  */
 exports.updateInstructor = async (req, res, next) => {
     try {
-        const updatedInstructor = await Instructor.update(req.params.userId, req.body);
-        updatedInstructor.user.passwordHash = undefined;
+        const { userId } = req.params;
+        const {
+            firstName, lastName, email, profileImageUrl, // User fields
+            employeeNo, departmentId // Instructor fields
+        } = req.body;
 
+        const updated = await prisma.$transaction(async (tx) => {
+            // 1) Update User fields if provided
+            const userData = {};
+            if (firstName) userData.firstName = firstName;
+            if (lastName) userData.lastName = lastName;
+            if (email) userData.email = email;
+            if (profileImageUrl) userData.profileImageUrl = profileImageUrl;
+            if (req.file) userData.profileImageUrl = req.file.path;
+
+            if (Object.keys(userData).length > 0) {
+                await tx.user.update({
+                    where: { id: parseInt(userId) },
+                    data: userData
+                });
+            }
+
+            // 2) Update Instructor fields if provided
+            const instructorData = {};
+            if (employeeNo) instructorData.employeeNo = employeeNo;
+            if (departmentId) instructorData.departmentId = parseInt(departmentId);
+
+            return await tx.instructor.update({
+                where: { userId: parseInt(userId) },
+                data: instructorData,
+                include: { user: true, department: true }
+            });
+        });
+
+        updated.user.passwordHash = undefined;
         res.status(200).json({
             status: 'success',
-            data: { instructor: updatedInstructor }
+            data: { instructor: updated }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * Delete Instructor (Restricted to ADMIN)
+ * Deletes from both Instructor and User tables
+ */
+exports.deleteInstructor = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+
+        await prisma.$transaction(async (tx) => {
+            // 1) Delete Instructor Profile
+            await tx.instructor.delete({
+                where: { userId: parseInt(userId) }
+            });
+
+            // 2) Delete User Account
+            await tx.user.delete({
+                where: { id: parseInt(userId) }
+            });
+        });
+
+        res.status(204).json({
+            status: 'success',
+            data: null
         });
     } catch (err) {
         next(err);

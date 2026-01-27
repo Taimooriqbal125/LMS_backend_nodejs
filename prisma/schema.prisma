@@ -18,6 +18,11 @@ model User {
   passwordHash    String    @map("password_hash")
   profileImageUrl String?   @map("profile_image_url")
   status          String    @default("active")
+  isEmailVerified Boolean   @default(false) @map("is_email_verified")
+  otp             String?
+  otpExpires      DateTime? @map("otp_expires")
+  passwordResetOtp String?  @map("password_reset_otp")
+  passwordResetOtpExpires DateTime? @map("password_reset_otp_expires")
   lastLoginAt     DateTime? @map("last_login_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -116,7 +121,7 @@ model Student {
   userId         Int      @id @map("user_id")
   agNo           String   @unique @map("ag_no")
   departmentId   Int      @map("department_id")
-  enrollmentDate DateTime @map("enrollment_date")
+  admissionDate  DateTime @default(now()) @map("admission_date")
   programId      Int      @map("program_id")
 
   // Relations
@@ -276,7 +281,7 @@ model SocietyMember {
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   position SocietyPosition @relation(fields: [positionId], references: [id])
 
-  @@unique([societyId, userId, positionId])
+  @@unique([societyId, userId])
   @@map("society_members")
 }
 

@@ -16,7 +16,7 @@ exports.registerStudent = async (req, res, next) => {
             agNo,
             departmentId,
             programId,
-            enrollmentDate
+            admissionDate
         } = req.body;
 
         // 1) Validation
@@ -44,10 +44,33 @@ exports.registerStudent = async (req, res, next) => {
             return res.status(500).json({ status: 'error', message: 'Student role not found in database' });
         }
 
-        // 4) HASH PASSWORD
+        // 4) Validate Department & Program Relationship
+        const program = await prisma.program.findUnique({
+            where: { id: parseInt(programId) }
+        });
+
+        if (!program || program.departmentId !== parseInt(departmentId)) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Invalid program selected or program does not belong to the selected department'
+            });
+        }
+
+        // 5) HASH PASSWORD
         const hashedPassword = await authUtils.hashPassword(password);
 
-        // 5) ATOMIC TRANSACTION
+        // 5) Generate OTP
+        const otp = authUtils.generateOTP();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        // 6) Handle Image Upload
+        let finalProfileImageUrl = profileImageUrl;
+        if (req.file) {
+            // With Cloudinary storage, req.file.path is the secure URL
+            finalProfileImageUrl = req.file.path;
+        }
+
+        // 7) ATOMIC TRANSACTION
         const newStudent = await prisma.$transaction(async (tx) => {
             // a) Create User
             const user = await tx.user.create({
@@ -56,7 +79,10 @@ exports.registerStudent = async (req, res, next) => {
                     lastName,
                     email,
                     passwordHash: hashedPassword,
-                    profileImageUrl,
+                    profileImageUrl: finalProfileImageUrl,
+                    otp,
+                    otpExpires,
+                    isEmailVerified: false,
                     userRoles: {
                         create: {
                             roleId: role.id
@@ -72,7 +98,7 @@ exports.registerStudent = async (req, res, next) => {
                     agNo,
                     departmentId: parseInt(departmentId),
                     programId: parseInt(programId),
-                    enrollmentDate: enrollmentDate ? new Date(enrollmentDate) : new Date()
+                    admissionDate: (admissionDate && admissionDate !== '') ? new Date(admissionDate) : undefined
                 },
                 include: {
                     user: true,
@@ -82,15 +108,26 @@ exports.registerStudent = async (req, res, next) => {
             });
         });
 
-        // 6) Generate Token
+        // 7) Send OTP Email
+        const sendEmail = require('../utils/emailService');
+        await sendEmail({
+            email: newStudent.user.email,
+            subject: 'Email Verification OTP',
+            message: `Your verification code is ${otp}. It will expire in 10 minutes.`,
+        });
+
+        // 8) Generate Token
         const token = authUtils.signToken(newStudent.userId);
 
-        // Hide password hash
+        // Hide sensitive fields
         newStudent.user.passwordHash = undefined;
+        newStudent.user.otp = undefined;
+        newStudent.user.otpExpires = undefined;
 
         res.status(201).json({
             status: 'success',
             token,
+            message: 'Student registered. OTP sent to email.',
             data: { student: newStudent }
         });
     } catch (err) {
@@ -140,16 +177,79 @@ exports.getStudent = async (req, res, next) => {
 };
 
 /**
- * Update Student
+ * Update Student (Industrial logic: updates both User and Student tables)
  */
 exports.updateStudent = async (req, res, next) => {
     try {
-        const updatedStudent = await Student.update(req.params.userId, req.body);
-        updatedStudent.user.passwordHash = undefined;
+        const { userId } = req.params;
+        const {
+            firstName, lastName, email, profileImageUrl, // User fields
+            agNo, departmentId, programId, admissionDate // Student fields
+        } = req.body;
 
+        const updated = await prisma.$transaction(async (tx) => {
+            // 1) Update User fields if provided
+            const userData = {};
+            if (firstName) userData.firstName = firstName;
+            if (lastName) userData.lastName = lastName;
+            if (email) userData.email = email;
+            if (profileImageUrl) userData.profileImageUrl = profileImageUrl;
+            if (req.file) userData.profileImageUrl = req.file.path; // Handled by multer if applied
+
+            if (Object.keys(userData).length > 0) {
+                await tx.user.update({
+                    where: { id: parseInt(userId) },
+                    data: userData
+                });
+            }
+
+            // 2) Update Student fields if provided
+            const studentData = {};
+            if (agNo) studentData.agNo = agNo;
+            if (departmentId) studentData.departmentId = parseInt(departmentId);
+            if (programId) studentData.programId = parseInt(programId);
+            if (admissionDate) studentData.admissionDate = new Date(admissionDate);
+
+            return await tx.student.update({
+                where: { userId: parseInt(userId) },
+                data: studentData,
+                include: { user: true, department: true, program: true }
+            });
+        });
+
+        updated.user.passwordHash = undefined;
         res.status(200).json({
             status: 'success',
-            data: { student: updatedStudent }
+            data: { student: updated }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * Delete Student (Restricted to ADMIN)
+ * Deletes from both Student and User tables
+ */
+exports.deleteStudent = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+
+        await prisma.$transaction(async (tx) => {
+            // 1) Delete Student Profile
+            await tx.student.delete({
+                where: { userId: parseInt(userId) }
+            });
+
+            // 2) Delete User Account
+            await tx.user.delete({
+                where: { id: parseInt(userId) }
+            });
+        });
+
+        res.status(204).json({
+            status: 'success',
+            data: null
         });
     } catch (err) {
         next(err);

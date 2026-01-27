@@ -30,3 +30,11 @@ exports.hashPassword = async (password) => {
 exports.comparePasswords = async (candidatePassword, userPassword) => {
     return await bcrypt.compare(candidatePassword, userPassword);
 };
+
+/**
+ * Generate 6-digit OTP
+ * @returns {string} - 6-digit OTP string
+ */
+exports.generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
