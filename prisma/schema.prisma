@@ -16,6 +16,7 @@ model User {
   lastName        String?   @map("last_name")
   email           String    @unique
   passwordHash    String    @map("password_hash")
+  refreshToken  String?   // <-- Add this
   profileImageUrl String?   @map("profile_image_url")
   status          String    @default("active")
   isEmailVerified Boolean   @default(false) @map("is_email_verified")

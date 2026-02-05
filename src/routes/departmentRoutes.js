@@ -11,5 +11,6 @@ router.get('/getdepartment/:id', departmentController.getDepartment);
 router.post('/createdepartment', authMiddleware.restrictTo('ADMIN'), departmentController.createDepartment);
 router.patch('/updatedepartment/:id', authMiddleware.restrictTo('ADMIN'), departmentController.updateDepartment);
 router.delete('/deletedepartment/:id', authMiddleware.restrictTo('ADMIN'), departmentController.deleteDepartment);
+router.patch('/assignhod/:id', authMiddleware.restrictTo('ADMIN'), departmentController.assignHOD);
 
 module.exports = router;

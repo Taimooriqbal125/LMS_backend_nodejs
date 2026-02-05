@@ -14,5 +14,6 @@ router.get('/getallstudents', authMiddleware.restrictTo('ADMIN', 'INSTRUCTOR'), 
 router.get('/getstudent/:userId', studentController.getStudent);
 router.patch('/updatestudent/:userId', authMiddleware.restrictTo('ADMIN', 'STUDENT'), studentController.updateStudent);
 router.delete('/deletestudent/:userId', authMiddleware.restrictTo('ADMIN'), studentController.deleteStudent);
+router.patch('/togglestatus/:userId', authMiddleware.restrictTo('ADMIN'), studentController.toggleStudentStatus);
 
 module.exports = router;

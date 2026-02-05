@@ -41,7 +41,7 @@ exports.signup = async (req, res, next) => {
         }
 
         // 4) Create user with linked role and OTP
-        const newUser = await prisma.user.create({
+        const user = await prisma.user.create({
             data: {
                 firstName,
                 lastName,
@@ -67,24 +67,32 @@ exports.signup = async (req, res, next) => {
         // 5) Send OTP Email
         const sendEmail = require('../utils/emailService');
         await sendEmail({
-            email: newUser.email,
+            email: user.email,
             subject: 'Email Verification OTP',
             message: `Your verification code is ${otp}. It will expire in 10 minutes.`,
         });
 
-        // 6) Generate token
-        const token = authUtils.signToken(newUser.id);
+        // Generate tokens
+        const token = authUtils.signToken(user.id); // access token
+        const refreshToken = authUtils.signRefreshToken(user.id); // refresh token
+
+        // Save refresh token in DB
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { refreshToken },
+        });
 
         // 7) Remove sensitive data from output
-        newUser.passwordHash = undefined;
-        newUser.otp = undefined;
-        newUser.otpExpires = undefined;
+        user.passwordHash = undefined;
+        user.otp = undefined;
+        user.otpExpires = undefined;
 
         res.status(201).json({
             status: 'success',
             token,
+            refreshToken,
             message: 'OTP sent to email. Please verify your email.',
-            data: { user: newUser },
+            data: { user: user },
         });
     } catch (err) {
         next(err);

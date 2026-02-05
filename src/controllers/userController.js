@@ -22,7 +22,7 @@ exports.getAllUsers = async (req, res, next) => {
 
 exports.getUser = async (req, res, next) => {
     try {
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({
                 status: 'fail',

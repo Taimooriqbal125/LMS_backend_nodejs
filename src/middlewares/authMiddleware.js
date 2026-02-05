@@ -58,10 +58,10 @@ exports.protect = async (req, res, next) => {
  */
 exports.restrictTo = (...roles) => {
     return (req, res, next) => {
-        // Check if any of the user's roles match the required roles
-        const userRoleNames = req.user.userRoles.map(ur => ur.role.roleName);
+        // Check if any of the user's roles match the required roles (case-insensitive)
+        const userRoleNames = req.user.userRoles.map(ur => ur.role.roleName.toUpperCase());
 
-        const hasPermission = roles.some(role => userRoleNames.includes(role));
+        const hasPermission = roles.some(role => userRoleNames.includes(role.toUpperCase()));
 
         if (!hasPermission) {
             return res.status(403).json({

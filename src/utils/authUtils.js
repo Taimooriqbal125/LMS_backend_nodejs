@@ -12,6 +12,19 @@ exports.signToken = (id) => {
     });
 };
 
+
+/**
+ * Sign JWT Refresh Token
+ * @param {number} id - User ID
+ * @returns {string} - JWT Refresh Token
+ */
+exports.signRefreshToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
+        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN, // e.g., '7d' or '30d'
+    });
+};
+
+
 /**
  * Hash Password
  * @param {string} password - Plain text password

@@ -228,28 +228,77 @@ exports.updateStudent = async (req, res, next) => {
 };
 
 /**
- * Delete Student (Restricted to ADMIN)
- * Deletes from both Student and User tables
+ * Deactivate Student (Soft Delete - Restricted to ADMIN)
+ * Sets user status to 'inactive' instead of permanently deleting
  */
 exports.deleteStudent = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
-        await prisma.$transaction(async (tx) => {
-            // 1) Delete Student Profile
-            await tx.student.delete({
-                where: { userId: parseInt(userId) }
-            });
-
-            // 2) Delete User Account
-            await tx.user.delete({
-                where: { id: parseInt(userId) }
-            });
+        // Soft delete: Set user status to inactive
+        const deactivatedUser = await prisma.user.update({
+            where: { id: parseInt(userId) },
+            data: { status: 'inactive' },
+            include: {
+                student: {
+                    include: {
+                        department: true,
+                        program: true
+                    }
+                }
+            }
         });
 
-        res.status(204).json({
+        // Hide sensitive fields
+        deactivatedUser.passwordHash = undefined;
+
+        res.status(200).json({
             status: 'success',
-            data: null
+            message: 'Student deactivated successfully',
+            data: { user: deactivatedUser }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+/**
+ * Toggle Student Status (Restricted to ADMIN)
+ * Toggles user status between 'active' and 'inactive'
+ */
+exports.toggleStudentStatus = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { status } = req.body;
+
+        // Validate status value
+        if (!status || !['active', 'inactive'].includes(status.toLowerCase())) {
+            return res.status(400).json({
+                status: 'fail',
+                message: "Status must be either 'active' or 'inactive'"
+            });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(userId) },
+            data: { status: status.toLowerCase() },
+            include: {
+                student: {
+                    include: {
+                        department: true,
+                        program: true
+                    }
+                }
+            }
+        });
+
+        // Hide sensitive fields
+        updatedUser.passwordHash = undefined;
+
+        res.status(200).json({
+            status: 'success',
+            message: `Student ${status.toLowerCase() === 'active' ? 'activated' : 'deactivated'} successfully`,
+            data: { user: updatedUser }
         });
     } catch (err) {
         next(err);

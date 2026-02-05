@@ -12,6 +12,8 @@ const enrollmentRoutes = require('./enrollmentRoutes');
 const courseContentRoutes = require('./courseContentRoutes');
 const societyRoutes = require('./societyRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
+const roleRoutes = require('./roleRoutes');
+const societyPositionRoutes = require('./societyPositionRoutes');
 
 // LMS Routes will be added here
 router.use('/auth', authRoutes);
@@ -26,6 +28,8 @@ router.use('/enrollments', enrollmentRoutes);
 router.use('/contents', courseContentRoutes);
 router.use('/societies', societyRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/roles', roleRoutes);
+router.use('/positions', societyPositionRoutes);
 
 router.get('/', (req, res) => {
     res.json({ message: 'Welcome to the LMS API' });
