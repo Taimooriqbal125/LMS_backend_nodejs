@@ -2,10 +2,13 @@
   "name": "project001",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node dist/server.js",
     "dev": "nodemon src/server.js",
+    "dev:ts": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts",
+    "build": "rimraf dist && tsc",
+    "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -22,13 +25,33 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "multer-storage-cloudinary": "^2.2.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.12"
   },
   "devDependencies": {
     "@prisma/client": "^6.2.1",
+    "@types/bcryptjs": "*",
+    "@types/cors": "*",
+    "@types/dotenv": "*",
+    "@types/express": "*",
+    "@types/jsonwebtoken": "*",
+    "@types/morgan": "*",
+    "@types/multer": "*",
+    "@types/node": "*",
+    "@types/nodemailer": "*",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
     "nodemon": "^3.1.11",
-    "prisma": "^6.19.2"
+    "prettier": "^3.5.1",
+    "prisma": "^6.19.2",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
