@@ -8,8 +8,8 @@
     "dev": "nodemon src/server.js",
     "dev:ts": "tsx watch src/server.ts",
     "build": "rimraf dist && tsc",
-    "lint": "eslint \"src/**/*.ts\"",
-    "lint:fix": "eslint \"src/**/*.ts\" --fix",
+"lint": "eslint \"src/**/*.ts\" --ignore-pattern \"src/generated/**\"",
+"lint:fix": "eslint \"src/**/*.ts\" --ignore-pattern \"src/generated/**\" --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
