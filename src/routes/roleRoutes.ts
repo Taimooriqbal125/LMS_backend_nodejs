@@ -1,6 +1,6 @@
 import express from 'express';
 import * as roleController from '../controllers/roleController';
-const authMiddleware = require('../middlewares/authMiddleware'); // Temporary until authMiddleware is migrated
+import authMiddleware from '../middlewares/authMiddleware';
 
 const router = express.Router();
 

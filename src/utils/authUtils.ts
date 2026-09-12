@@ -7,10 +7,10 @@ import bcrypt from 'bcryptjs';
  * @returns {string} - JWT Token
  */
 export const signToken = (id: number): string => {
-    const options: SignOptions = {
-        expiresIn: process.env.JWT_EXPIRES_IN as any,
-    };
-    return jwt.sign({ id }, process.env.JWT_SECRET as Secret, options);
+  const options: SignOptions = {
+    expiresIn: process.env.JWT_EXPIRES_IN as any,
+  };
+  return jwt.sign({ id }, process.env.JWT_SECRET as Secret, options);
 };
 
 /**
@@ -19,10 +19,10 @@ export const signToken = (id: number): string => {
  * @returns {string} - JWT Refresh Token
  */
 export const signRefreshToken = (id: number): string => {
-    const options: SignOptions = {
-        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN as any,
-    };
-    return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET as Secret, options);
+  const options: SignOptions = {
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN as any,
+  };
+  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET as Secret, options);
 };
 
 /**
@@ -31,7 +31,7 @@ export const signRefreshToken = (id: number): string => {
  * @returns {Promise<string>} - Hashed password
  */
 export const hashPassword = async (password: string): Promise<string> => {
-    return await bcrypt.hash(password, 12);
+  return await bcrypt.hash(password, 12);
 };
 
 /**
@@ -41,10 +41,10 @@ export const hashPassword = async (password: string): Promise<string> => {
  * @returns {Promise<boolean>} - True if match
  */
 export const comparePasswords = async (
-    candidatePassword: string,
-    userPassword: string,
+  candidatePassword: string,
+  userPassword: string,
 ): Promise<boolean> => {
-    return await bcrypt.compare(candidatePassword, userPassword);
+  return await bcrypt.compare(candidatePassword, userPassword);
 };
 
 /**
@@ -52,15 +52,13 @@ export const comparePasswords = async (
  * @returns {string} - 6-digit OTP string
  */
 export const generateOTP = (): string => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
-
 
 export default {
-    signToken,
-    signRefreshToken,
-    hashPassword,
-    comparePasswords,
-    generateOTP,
+  signToken,
+  signRefreshToken,
+  hashPassword,
+  comparePasswords,
+  generateOTP,
 };
-    

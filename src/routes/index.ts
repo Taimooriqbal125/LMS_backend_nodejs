@@ -33,7 +33,7 @@ router.use('/roles', roleRoutes);
 router.use('/positions', societyPositionRoutes);
 
 router.get('/', (_req: Request, res: Response) => {
-    res.json({ message: 'Welcome to the LMS API' });
+  res.json({ message: 'Welcome to the LMS API' });
 });
 
 export default router;

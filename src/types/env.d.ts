@@ -18,4 +18,4 @@ declare global {
 }
 
 // If it's a declaration file, we need this to make it a module
-export { };
+export {};

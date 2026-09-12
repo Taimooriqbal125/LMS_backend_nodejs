@@ -11,16 +11,16 @@ router.get('/getcontent/:courseId', courseContentController.getCourseContent);
 
 // Upload content (Instructors or Admins)
 router.post(
-    '/uploadcontent',
-    authMiddleware.restrictTo('ADMIN', 'INSTRUCTOR'),
-    courseContentController.uploadContent,
+  '/uploadcontent',
+  authMiddleware.restrictTo('ADMIN', 'INSTRUCTOR'),
+  courseContentController.uploadContent,
 );
 
 // Delete content
 router.delete(
-    '/deletecontent/:id',
-    authMiddleware.restrictTo('ADMIN', 'INSTRUCTOR'),
-    courseContentController.deleteContent,
+  '/deletecontent/:id',
+  authMiddleware.restrictTo('ADMIN', 'INSTRUCTOR'),
+  courseContentController.deleteContent,
 );
 
 export default router;

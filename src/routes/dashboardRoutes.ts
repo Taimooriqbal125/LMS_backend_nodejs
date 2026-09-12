@@ -8,9 +8,9 @@ router.use(authMiddleware.protect);
 
 // Global Stats (Admin/Instructor)
 router.get(
-    '/stats',
-    authMiddleware.restrictTo('ADMIN', 'INSTRUCTOR'),
-    dashboardController.getGlobalStats,
+  '/stats',
+  authMiddleware.restrictTo('ADMIN', 'INSTRUCTOR'),
+  dashboardController.getGlobalStats,
 );
 
 // Student Summary (Specific to logged in student)
