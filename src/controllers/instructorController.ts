@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client';
 import prisma from '../config/database';
 import Instructor from '../models/Instructor';
 import * as authUtils from '../utils/authUtils';
